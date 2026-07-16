@@ -1,0 +1,463 @@
+\documentclass[11pt]{ctexart}
+
+\usepackage{geometry}
+\usepackage{amsmath,amssymb}   % 数学公式
+\usepackage{graphicx}          % 插图
+\usepackage{booktabs}          % 三线表 \toprule \midrule \bottomrule
+\usepackage{multirow}          % 表格跨行单元格（如 SCF 列）
+\usepackage{enumitem}          % 更好用的列表
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{indentfirst}        % ← 新增这行：让标题后第一段也缩进，不想让某一行锁进时，在这一段开头加\noindent
+\usepackage[version=3]{mhchem}  % 化学式 \ce{}
+\usepackage{float}              % 强制表格位置 [H]
+\usepackage[hidelinks]{hyperref}
+
+\geometry{a4paper,margin=1.5cm}
+% \allowdisplaybreaks
+\numberwithin{equation}{section}
+
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\bra}[1]{\langle #1|}
+\newcommand{\ket}[1]{|#1\rangle}
+\newcommand{\eri}[1]{\!\left(#1\right)}
+
+\title{spin flip up excitation TDA analytic gradient}
+\author{王宏博}
+\date{2026.6.14}
+
+\begin{document}
+\maketitle
+\vspace{-2.2em}
+\section{excited state analytic gradient basis}
+激发态解析梯度可以写为基态能量的梯度加激发能的梯度，即
+\begin{equation}
+    \frac{d E_{exc}}{d\xi} = \frac{d E_{g}}{d \xi} + \frac{d \omega}{d \xi}
+\end{equation}
+基态能量的梯度在现有程序中容易计算，这里暂时不展开，以后补充这块内容。
+要计算激发能的梯度，首先要得到激发能，对于 USF-TDA , Casida equation 为
+\begin{equation}
+    \mathbf{A}\mathbf{X} = \omega \mathbf{X}
+\end{equation}
+\begin{equation}
+    \omega = \mathbf{X}^{T} \mathbf{A} \mathbf{X}
+\end{equation}
+\begin{equation}
+    A_{ia,jb}^{\beta\alpha} 
+    = \delta_{ij}F_{ab}^{\alpha} 
+    - F_{ij}^{\beta}\delta_{ab} 
+    - c_x (i^{\beta}j^{\beta}|b^{\alpha}a^{\alpha})
+    + f_{pq,rs}^{xc,\sigma\tau}[\rho] 
+\end{equation}
+对于 collinear kernel 
+\begin{equation}
+    f_{pq,rs}^{xc,\sigma\tau}[\rho] = 0
+\end{equation}
+对于 multicollinear kernel 
+\begin{equation}
+    f_{pq,sr}^{xc,\sigma\tau}[\rho] 
+    = \frac{\delta^2 E_{xc}}{\delta\rho_{pq}^{\sigma} \delta\rho_{sr}^{\tau}}
+\end{equation}
+
+对于 ROKS 参考态， Casida equation 与 USF-TDA 相同， $\mathbf{A}$ 同样与 USF-TDA 相同，注意 Fock 与 USF-TDA 不同，后面 Lagrange Multiplier method 中的约束也与 USF-TDA 不同。
+\begin{equation}
+    \mathbf{A}\mathbf{X} = \omega \mathbf{X}
+\end{equation}
+\begin{equation}
+    \omega = \mathbf{X}^{T} \mathbf{A} \mathbf{X}
+\end{equation}
+\begin{equation}
+    A_{ia,jb}^{\beta\alpha} 
+    = \delta_{ij}F_{ab}^{\alpha} 
+    - F_{ij}^{\beta}\delta_{ab} 
+    - c_x (i^{\beta}j^{\beta}|b^{\alpha}a^{\alpha}) 
+    + f_{pq,rs}^{xc,\sigma\tau}[\rho] 
+\end{equation}
+同样对于 collinear kernel
+\begin{equation}
+    f_{pq,rs}^{xc,\sigma\tau}[\rho] = 0
+\end{equation}
+对于 multicollinear kernel 
+\begin{equation}
+    f_{pq,sr}^{xc,\sigma\tau}[\rho] 
+    = \frac{\delta^2 E_{xc}}{\delta\rho_{pq}^{\sigma} \delta\rho_{sr}^{\tau}}
+\end{equation}
+
+
+\section{UKS with USF-TDA analytic gradient}
+这一节推导 UKS 参考态下 spin flip up TDA 激发能的解析梯度。所以后面的推导中所有 $i,j\in C$ ， $a,b\in V$。与 spin conversing U-TDDFT 的解析梯度类似，同样使用 Lagrangian Multiplier method ，同样的三个约束需要满足
+
+\noindent
+1. 正交 （由于考虑 TDA ，所以仅剩 $\mathbf{X}$）
+\begin{equation}
+    \mathbf{X}^{T}\mathbf{X} = 1
+\end{equation}
+2. Brillouin定理
+\begin{equation}
+    F_{ia}^{\sigma} = F_{ai}^{\sigma} = 0
+\end{equation}
+3. 正则轨道
+\begin{equation}
+    S_{pq}^{\sigma} = \delta_{pq}
+\end{equation}
+所以拉格朗日量可以写为
+\begin{equation}
+    \mathcal{L}[\mathbf{X}, \mathbf{C}, \Omega, \mathbf{Z}, \mathbf{W}]
+    = \omega 
+    - \Omega(\mathbf{X}^{T}\mathbf{X} - 1)
+    + \sum_{ai\sigma}Z_{ai}^{\sigma}F_{ai}^{\sigma}
+    - \sum_{pq\sigma}W_{pq}^{\sigma}(S_{pq}^{\sigma}-\delta_{pq})
+\end{equation}
+同样拉格朗日乘子法要求
+\begin{equation}
+    \frac{\partial \mathcal{L}}{\partial X_{ia}^{\sigma}} = 0,
+    \quad \frac{\partial \mathcal{L}}{\partial C_{\mu p}^{\sigma}} = 0,
+    \quad \frac{\partial \mathcal{L}}{\partial \Omega} = 0 ,
+    \quad \frac{\partial \mathcal{L}}{\partial Z_{ai}^{\sigma}} = 0 ,
+    \quad \frac{\partial \mathcal{L}}{\partial W_{pq}^{\sigma}} = 0 
+\end{equation}
+所以
+\begin{equation}
+    \frac{d \omega}{d \xi} 
+    = \frac{\partial\mathcal{L}}{\partial \xi}
+    + \frac{\partial\mathcal{L}}{\partial X_{ia}^{\sigma}}\frac{\partial X_{ia}^{\sigma}}{\partial \xi}
+    + \frac{\partial\mathcal{L}}{\partial C_{\mu p}^{\sigma}}\frac{\partial C_{\mu p}^{\sigma}}{\partial \xi}
+    + \frac{\partial\mathcal{L}}{\partial \Omega}\frac{\partial \Omega}{\partial \xi}
+    + \frac{\partial\mathcal{L}}{\partial Z_{ai}^{\sigma}}\frac{\partial Z_{ai}^{\sigma}}{\partial \xi}
+    + \frac{\partial\mathcal{L}}{\partial W_{pq}^{\sigma}}\frac{\partial W_{pq}^{\sigma}}{\partial \xi}
+    = \frac{d \mathcal{L}}{d\xi}
+\end{equation}
+同样得到拉格朗日量对坐标的偏导数，由于仅考虑 TDA 所以其中一些项无需写为对称的形式。
+% \begin{equation}
+%     \begin{aligned}
+%         \frac{\partial\mathcal{L}}{\partial\xi} 
+%         &= \sum_{\mu\nu}\Bigg[
+%             \sum_{\sigma}(T_{\mu\nu}^{\sigma}+Z_{\mu\nu}^{S,\sigma})\frac{\partial h_{\mu\nu}^{core}}{\partial\xi}
+%             + \sum_{\sigma}(T_{\mu\nu}^{\sigma}+Z_{\mu\nu}^{S,\sigma})\frac{\partial g_{\mu\nu}^{\sigma}[\mathbf{D}]}{\partial\xi}
+%             +\sum_{\sigma}(T_{\mu\nu}^{\sigma}+Z_{\mu\nu}^{S,\sigma})v_{\mu\nu}^{xc,\sigma,(\xi)}[\rho]\\
+%             &\quad - c_x\sum_{\kappa\lambda}X_{\mu\nu}^{S,\beta\alpha}X_{\kappa\lambda}^{S,\beta\alpha}\frac{\partial (\mu\kappa|\lambda\nu)}{\partial\xi}
+%             - c_x\sum_{\kappa\lambda}X_{\mu\nu}^{A,\beta\alpha}X_{\lambda\kappa}^{A,\beta\alpha}\frac{\partial(\mu\lambda|\kappa\nu)}{\partial\xi}
+%             - \sum_{\sigma}\frac{\partial S_{\mu\nu}^{\sigma}}{\partial\xi} W_{\mu\nu}^{\sigma}
+%         \Bigg]
+%     \end{aligned}
+% \end{equation}
+\begin{equation}
+    \begin{aligned}
+        \frac{\partial\mathcal{L}}{\partial\xi} 
+        &= \sum_{\mu\nu}\Bigg[
+            \sum_{\sigma}(T_{\mu\nu}^{\sigma}+Z_{\mu\nu}^{S,\sigma})\frac{\partial h_{\mu\nu}^{core}}{\partial\xi}
+            + \sum_{\sigma}(T_{\mu\nu}^{\sigma}+Z_{\mu\nu}^{S,\sigma})\frac{\partial g_{\mu\nu}^{\sigma}[\mathbf{D}]}{\partial\xi}
+            +\sum_{\sigma}(T_{\mu\nu}^{\sigma}+Z_{\mu\nu}^{S,\sigma})v_{\mu\nu}^{xc,\sigma,(\xi)}[\rho]\\
+            &\quad - c_x\sum_{\mu\nu}X_{\mu\nu}^{\beta\alpha}\frac{\partial K_{\mu\nu}^{\beta\alpha}[\mathbf{X}]}{\partial\xi}
+            - \sum_{\sigma}\frac{\partial S_{\mu\nu}^{\sigma}}{\partial\xi} W_{\mu\nu}^{\sigma}
+        \Bigg]
+    \end{aligned}
+\end{equation}
+其中
+\begin{equation}
+    \begin{aligned}
+        & T_{\mu\nu}^{\sigma} 
+        = \sum_{ab}C_{\mu a}^{\alpha}T_{ab}C_{\nu b}^{\alpha}
+        + \sum_{ij}C_{\mu i}^{\beta}T_{ij}C_{\nu}^{\beta}\\
+        & T_{ab} = \sum_{i}X_{ia}X_{ib}\\
+        & T_{ij} = -\sum_{a}X_{ia}X_{ja}\\
+        & Z_{\mu\nu}^{S,\sigma} = \frac{1}{2}(Z_{\mu\nu}^{\sigma} + Z_{\nu\mu}^{\sigma})\\
+        & g_{\mu\nu}^{\sigma}[\mathbf{V}] = \sum_{\kappa\lambda\tau}[(\mu\nu|\kappa\lambda)-c_x\delta_{\sigma\tau}(\mu\lambda|\kappa\nu)]V_{\kappa\lambda}\\
+        & K_{\mu\nu}^{\beta\alpha}[\mathbf{X}] = \sum_{\kappa\lambda}(\mu\lambda|\kappa\nu)\sum_{jb}C_{\kappa j}^{\beta}C_{\lambda b}^{\alpha}X_{jb}\\
+        & v_{\mu\nu}^{xc,\sigma,(\xi)}[\rho] = \frac{\partial v_{\mu\nu}^{xc,\sigma}[\rho]}{\partial \xi}\\
+        & f_{\mu\nu,\kappa\lambda}^{xc,\sigma\tau,(\xi)}[\rho] = \frac{\partial f_{\mu\nu,\kappa\lambda}^{xc,\sigma\tau}[\rho]}{\partial\xi}
+    \end{aligned}
+\end{equation}
+同样定义
+\begin{equation}
+    G_{\mu\nu}^{\sigma}[\mathbf{V}] = g_{\mu\nu}^{\sigma}[\mathbf{V}] + f_{\mu\nu}^{xc,\sigma}[\mathbf{V}]
+\end{equation}
+同样计算 $Q_{pq}^{\sigma}$
+\begin{equation}
+    \begin{aligned}
+        & Q_{i' j'}^{\alpha'} = 2G_{i' j'}[\mathbf{T}]\\
+        & Q_{a' b'}^{\alpha'} = 2\left(
+            \sum_{a}T_{aa'}F_{ab'}^{\alpha'}
+            - c_x\sum_{i}X_{ia'}K_{ib'}[\mathbf{X}]
+        \right)\\
+        & Q_{i' a'}^{\alpha'} = 2G_{i' a'}[\mathbf{T}]\\
+        & Q_{a' i'}^{\alpha'} = 2\left(
+            \sum_{a}T_{aa'}F_{a i'}^{\alpha'} 
+            - c_x\sum_{i}X_{ia'}K_{ii'}[\mathbf{X}]
+        \right)\\
+        & Q_{i' j'}^{\beta'} = 2\left(
+            \sum_{j}T_{i'j}F_{j'j}^{\beta'}
+            + G_{i'j'}^{\beta'}[\mathbf{T}]
+            - c_x \sum_{a}X_{i'a}K_{j'a}[\mathbf{X}]
+        \right)\\
+        & Q_{a' b'}^{\beta'} = 0\\
+        & Q_{i' a'}^{\beta'} = 2\left(
+            \sum_{j}T_{i'j}F_{a' j}^{\beta'} 
+            + G_{i' a'}^{\beta'}[\mathbf{T}]
+            - c_x\sum_{a}X_{i' a}K_{a'a}[\mathbf{X}]
+        \right)\\
+        & Q_{a' i'}^{\beta'} = 0
+    \end{aligned}
+\end{equation}
+然后给出相同形式的 $\sum_{\mu'}\frac{\partial\mathcal{L}}{\partial C_{\mu' p'}^{\sigma'}}C_{\mu'q'}^{\sigma'}$ ，其中 $\sigma$ 取 $\alpha$ 和 $\beta$
+\begin{equation}
+    \begin{aligned}
+        & \sum_{\mu'}\frac{\partial\mathcal{L}}{\partial C_{\mu' i'}^{\sigma'}}C_{\mu' j'}^{\sigma'}
+        = Q_{i' j'}^{\sigma'}
+        + 2G_{i' j'}^{\sigma'}[\mathbf{Z}^S]
+        - 2W_{i' j'}^{\sigma'}\\
+        & \sum_{\mu'}\frac{\partial\mathcal{L}}{\partial C_{\mu' a'}^{\sigma}}C_{\mu' b'}^{\sigma'}
+        = Q_{a' b'}^{\sigma'} 
+        - 2W_{a' b'}^{\sigma'}\\
+        & \sum_{\mu'}\frac{\partial\mathcal{L}}{\partial C_{\mu' i'}^{\sigma'}}C_{\mu' a'}^{\sigma'}
+        = Q_{i' a'}^{\sigma'}
+        + \sum_{a}Z_{a i'}^{\sigma'}F_{a' a}^{\sigma'}
+        + 2G_{i' a'}^{\sigma'}[\mathbf{Z}^S]
+        - 2W_{i' a'}^{\sigma'}\\
+        & \sum_{\mu'}\frac{\partial\mathcal{L}}{\partial C_{\mu' a'}^{\sigma'}}C_{\mu' i'}^{\sigma'}
+        = Q_{a' i'}^{\sigma'}
+        + \sum_{i}Z_{a' i}^{\sigma'}F_{i' i}^{\sigma'}
+        - 2W_{a' i'}^{\sigma'}
+    \end{aligned}
+\end{equation}
+相同形式的 Z vector equation
+\begin{equation}
+    - (Q_{i'a'}^{\sigma'} - Q_{a'i'}^{\sigma'})
+    = \sum_{a}Z_{ai'}^{\sigma'}F_{a'a}^{\sigma'} 
+    + 2G_{i'a'}^{\sigma'}[\mathbf{Z}^S]
+    - \sum_{i}Z_{a'i}^{\sigma'}F_{i'i}^{\sigma'}
+\end{equation}
+相同形式的 $W_{pq}^{\sigma}$
+\begin{equation}
+    \begin{aligned}
+        & W_{i'j'}^{\sigma'} = \frac{1}{2}Q_{i'j'}^{\sigma'} + G_{i'j'}^{\sigma'}\\
+        & W_{a'b'}^{\sigma'} = \frac{1}{2}Q_{a'b'}^{\sigma'}\\
+        & W_{i'a'}^{\sigma'} = \frac{1}{2}Q_{i'a'}^{\sigma'} + \frac{1}{2}\sum_{a}Z_{ai'}^{\sigma'}F_{a'a}^{\sigma'} + G_{i'a'}^{\sigma'}\\
+        & W_{a'i'}^{\sigma'} = \frac{1}{2}Q_{a'i'}^{\sigma'} + \frac{1}{2}\sum_{i}Z_{a'i}^{\sigma'}F_{i'i}^{\sigma'}
+    \end{aligned}
+\end{equation}
+
+\section{ROKS with USF-TDA analytic gradient}
+结合前一节和 spin conversing excitation 中 ROKS 参考态下的推导，这一节的公式基本都能顺利得到，使用 Lagrangian Multiplier method ，同样有三个约束 
+
+\noindent
+1. 正交（由于考虑 TDA ，所以仅剩 $\mathbf{X}$ ）
+\begin{equation}
+    \mathbf{X}^{T}\mathbf{X} = 1
+\end{equation}
+2. Brillouin 定理发生变化
+\begin{equation}
+    F_{ai}^{\alpha}+F_{ai}^{\beta} = 0
+    \quad F_{at}^{\alpha} = 0
+    \quad F_{it}^{\beta} = 0
+\end{equation}
+3. 正则轨道
+\begin{equation}
+    S_{pq} = \delta_{pq}
+\end{equation}
+所以拉格朗日量可以写为
+\begin{equation}
+    \mathcal{L}[\mathbf{X},\mathbf{C},\Omega,\mathbf{Z},\mathbf{W}]
+    = \omega 
+    - \Omega(\sum_{ia}X_{ia}X_{ia}-1)
+    + \sum_{ai}Z_{ai}(F_{ai}^{\alpha}+F_{ai}^{\beta})
+    + \sum_{at}Z_{at}F_{at}^{\alpha}
+    + \sum_{ti}Z_{ti}F_{ti}^{\beta}
+    - \sum_{pq}W_{pq}(S_{pq}-\delta_{pq})
+\end{equation}
+同样拉格朗日乘子法要求
+\begin{equation}
+    \frac{\partial \mathcal{L}}{\partial X_{ia}} = 0,
+    \quad \frac{\partial \mathcal{L}}{\partial C_{\mu p}} = 0,
+    \quad \frac{\partial \mathcal{L}}{\partial \Omega} = 0 ,
+    \quad \frac{\partial \mathcal{L}}{\partial Z_{ai}} = 0 ,
+    \quad \frac{\partial \mathcal{L}}{\partial W_{pq}} = 0 
+\end{equation}
+所以
+\begin{equation}
+    \frac{d \omega}{d \xi} 
+    = \frac{\partial\mathcal{L}}{\partial \xi}
+    + \frac{\partial\mathcal{L}}{\partial X_{ia}^{\sigma}}\frac{\partial X_{ia}^{\sigma}}{\partial \xi}
+    + \frac{\partial\mathcal{L}}{\partial C_{\mu p}^{\sigma}}\frac{\partial C_{\mu p}^{\sigma}}{\partial \xi}
+    + \frac{\partial\mathcal{L}}{\partial \Omega}\frac{\partial \Omega}{\partial \xi}
+    + \frac{\partial\mathcal{L}}{\partial Z_{ai}^{\sigma}}\frac{\partial Z_{ai}^{\sigma}}{\partial \xi}
+    + \frac{\partial\mathcal{L}}{\partial W_{pq}^{\sigma}}\frac{\partial W_{pq}^{\sigma}}{\partial \xi}
+    = \frac{d \mathcal{L}}{d\xi}
+\end{equation}
+同样得到拉格朗日量对坐标的偏导数，由于仅考虑 TDA 所以其中一些项无需写为对称的形式。
+\begin{equation}\label{eq:ROKS USF partial L}
+    \begin{aligned}
+        \frac{\partial\mathcal{L}}{\partial\xi} 
+        &= \sum_{\mu\nu}\Bigg[
+            \sum_{\sigma}(T_{\mu\nu}^{\sigma}+Z_{\mu\nu}^{S})\frac{\partial h_{\mu\nu}^{core}}{\partial\xi}
+            + \sum_{\sigma}(T_{\mu\nu}^{\sigma}+Z_{\mu\nu}^{S})\frac{\partial g_{\mu\nu}^{\sigma}[\mathbf{D}]}{\partial\xi}
+            +\sum_{\sigma}(T_{\mu\nu}^{\sigma}+Z_{\mu\nu}^{S})v_{\mu\nu}^{xc,\sigma,(\xi)}[\rho]\\
+            &\quad - c_x\sum_{\mu\nu}X_{\mu\nu}^{\beta\alpha}\frac{\partial K_{\mu\nu}^{\beta\alpha}[\mathbf{X}]}{\partial\xi}
+            - \sum_{\sigma}\frac{\partial S_{\mu\nu}}{\partial\xi} W_{\mu\nu}
+        \Bigg]
+    \end{aligned}
+\end{equation}
+其中
+\begin{equation}
+    \begin{aligned}
+        & T_{\mu\nu}^{\sigma} 
+        = \sum_{ab}C_{\mu a}^{\alpha}T_{ab}C_{\nu b}^{\alpha}
+        + \sum_{ij}C_{\mu i}^{\beta}T_{ij}C_{\nu}^{\beta}\\
+        & T_{ab} = \sum_{i}X_{ia}X_{ib}\\
+        & T_{ij} = -\sum_{a}X_{ia}X_{ja}\\
+        & Z_{\mu\nu}^{S} 
+        = \frac{1}{2}(Z_{\mu\nu} + Z_{\nu\mu})
+        = Z_{\nu\mu}^{S}\\
+        & Z_{\mu\nu} 
+        = \sum_{ai}C_{\mu i}C_{\nu a}Z_{ai}
+        + \sum_{at}C_{\mu t}C_{\nu a}Z_{ai}
+        + \sum_{ti}C_{\mu t}C_{\nu i}Z_{ti}\\
+        & g_{\mu\nu}^{\sigma}[\mathbf{V}] = \sum_{\kappa\lambda\tau}[(\mu\nu|\kappa\lambda)-c_x\delta_{\sigma\tau}(\mu\lambda|\kappa\nu)]V_{\kappa\lambda}\\
+        & K_{\mu\nu}^{\beta\alpha}[\mathbf{X}] = \sum_{\kappa\lambda}(\mu\lambda|\kappa\nu)\sum_{jb}C_{\kappa j}^{\beta}C_{\lambda b}^{\alpha}X_{jb}\\
+        & v_{\mu\nu}^{xc,\sigma,(\xi)}[\rho] = \frac{\partial v_{\mu\nu}^{xc,\sigma}[\rho]}{\partial \xi}\\
+        & f_{\mu\nu,\kappa\lambda}^{xc,\sigma\tau,(\xi)}[\rho] = \frac{\partial f_{\mu\nu,\kappa\lambda}^{xc,\sigma\tau}[\rho]}{\partial\xi}
+    \end{aligned}
+\end{equation}
+同样定义
+\begin{equation}
+    G_{\mu\nu}^{\sigma}[\mathbf{V}] = g_{\mu\nu}^{\sigma}[\mathbf{V}] + f_{\mu\nu}^{xc,\sigma}[\mathbf{V}]
+\end{equation}
+同样计算 $\sum_{\mu'}\frac{\partial\mathcal{L}}{\partial C_{\mu' p'}^{\sigma'}}C_{\mu'q'}^{\sigma'}=0$。首先计算 $Q_{pq}^{\sigma'}$
+\begin{equation}
+    \begin{aligned}
+        & Q_{i' j'}^{\alpha'} = 2G_{i' j'}[\mathbf{T}]\\
+        & Q_{i' t'}^{\alpha'} = 2G_{i't'}[\mathbf{T}]\\
+        & Q_{i' a'}^{\alpha'} = 2G_{i' a'}[\mathbf{T}]\\
+        & Q_{t' i'}^{\alpha'} = 2G_{t'i'}[\mathbf{T}]\\
+        & Q_{t' u'}^{\alpha'} = 2G_{t'u'}[\mathbf{T}]\\
+        & Q_{t' a'}^{\alpha'} = 2G_{t'a'}[\mathbf{T}]\\
+        & Q_{a' i'}^{\alpha'} = 2\left(
+            \sum_{a}T_{aa'}F_{a i'}^{\alpha'} 
+            - c_x\sum_{i}X_{ia'}K_{ii'}[\mathbf{X}]
+        \right)\\
+        & Q_{a' t'}^{\alpha'} = 2\left(
+            \sum_{a}T_{aa'}F_{at'}^{\alpha'}
+            - c_x\sum_{i}X_{ia'}K_{it'}[\mathbf{X}]
+        \right)\\
+        & Q_{a' b'}^{\alpha'} = 2\left(
+            \sum_{a}T_{aa'}F_{ab'}^{\alpha'}
+            - c_x\sum_{i}X_{ia'}K_{ib'}[\mathbf{X}]
+        \right)\\
+        & Q_{i' j'}^{\beta'} = 2\left(
+            \sum_{j}T_{i'j}F_{j'j}^{\beta'}
+            + G_{i'j'}^{\beta'}[\mathbf{T}]
+            - c_x \sum_{a}X_{i'a}K_{j'a}[\mathbf{X}]
+        \right)\\
+        & Q_{i' t'}^{\beta'} = 2\left(
+            \sum_{j}T_{i'j}F_{t'j}^{\beta'}
+            + G_{i't'}^{\beta'}[\mathbf{T}]
+            - c_x\sum_{a}X_{i'a}K_{t'a}[\mathbf{X}]
+        \right)\\
+        & Q_{i' a'}^{\beta'} = 2\left(
+            \sum_{j}T_{i'j}F_{a' j}^{\beta'} 
+            + G_{i' a'}^{\beta'}[\mathbf{T}]
+            - c_x\sum_{a}X_{i' a}K_{a'a}[\mathbf{X}]
+        \right)\\
+        & Q_{t'i'}^{\beta'} = 0\\
+        & Q_{t'u'}^{\beta'} = 0\\
+        & Q_{t'a'}^{\beta'} = 0\\
+        & Q_{a' i'}^{\beta'} = 0\\
+        & Q_{a't'}^{\beta'} = 0\\
+        & Q_{a' b'}^{\beta'} = 0\\
+    \end{aligned}
+\end{equation}
+然后得到
+\begin{equation}
+    \begin{aligned}
+        & \sum_{\mu'}\frac{\partial\mathcal{L}}{\partial C_{\mu' i'}}C_{\mu' j'} 
+        = Q_{i'j'} 
+        + 2G_{i'j'}[\mathbf{Z}^{S}] 
+        - 2W_{i'j'}\\
+        & \sum_{\mu'}\frac{\partial\mathcal{L}}{\partial C_{\mu'a'}}C_{\mu'b'} 
+        = Q_{a'b'}
+        - 2W_{a'b'}\\
+        & \sum_{\mu'}\frac{\partial\mathcal{L}}{\partial C_{\mu' t'}}C_{\mu' u'}
+        = Q_{t'u'} 
+        + 2G_{t'u'}^{\alpha'}[\mathbf{Z}^{S}] 
+        - 2W_{t'u'} \\
+        & \sum_{\mu'}\frac{\partial\mathcal{L}}{\partial C_{\mu'i'}}C_{\mu' a'}
+        = Q_{i'a'} 
+        + \sum_{a\sigma'}Z_{ai'}F_{aa'}^{\sigma'} 
+        + \sum_{t}Z_{ti'}F_{ta'}^{\beta'}
+        + 2G_{i'a'}[\mathbf{Z}^{S}] 
+        - 2W_{i'a'}\\
+        & \sum_{\mu'}\frac{\partial\mathcal{L}}{\partial C_{\mu' i'}}C_{\mu' t'}
+        = Q_{i't'}
+        + \sum_{a\sigma'}Z_{ai'}F_{at'}^{\sigma'}
+        + \sum_{t}Z_{ti'}F_{tt'}^{\beta'}
+        + 2G_{i't'}[\mathbf{Z}^{S}]
+        - 2W_{i't'}\\
+        & \sum_{\mu'}\frac{\partial\mathcal{L}}{\partial C_{\mu'a'}}C_{\mu' i'}
+        = Q_{a'i'}
+        + \sum_{i\sigma'}Z_{a'i}F_{i'i}^{\sigma'}
+        + \sum_{t}Z_{a't}F_{i't}^{\alpha'}
+        - 2W_{a'i'}\\
+        & \sum_{\mu'}\frac{\partial\mathcal{L}}{\partial C_{\mu'a'}}C_{\mu' t'}
+        = Q_{a't'}
+        + \sum_{i\sigma'}Z_{a'i}F_{t'i}^{\sigma'}
+        + \sum_{t}Z_{a't}F_{t't}^{\alpha'}
+        - 2W_{a't'}\\
+        & \sum_{\mu'}\frac{\partial\mathcal{L}}{\partial C_{\mu't'}}C_{\mu'i'}
+        = Q_{t'i'}
+        + \sum_{a}Z_{at'}F_{ai'}^{\alpha'}
+        + \sum_{i}Z_{t' i}F_{i' i}^{\beta'}
+        + 2G_{t'i'}^{\alpha'}[\mathbf{Z}^{S}]
+        - 2W_{t'i'}\\
+        & \sum_{\mu'}\frac{\partial\mathcal{L}}{\partial C_{\mu't'}}C_{\mu'a'}
+        = Q_{t'a'}
+        + \sum_{a}Z_{at'}F_{aa'}^{\alpha'}
+        + \sum_{i}Z_{t' i}F_{a' i}^{\beta'}
+        + 2G_{t'a'}^{\alpha'}[\mathbf{Z}^{S}]
+        - 2W_{t'a'}
+    \end{aligned}
+\end{equation}
+对于 ROKS 有 $W_{pq}=W_{qp}$ ，同样可以得到 Z vector equation
+\begin{equation}
+    \begin{aligned}
+        & -(Q_{i'a'}-Q_{a'i'}) 
+        = \sum_{i\sigma'}Z_{a'i}F_{i'i}^{\sigma'}
+        + \sum_{t}Z_{a't}F_{i't}^{\alpha'}
+        - \sum_{a\sigma'}Z_{ai'}F_{aa'}^{\sigma'} 
+        - \sum_{t}Z_{ti'}F_{ta'}^{\beta'}
+        - 2G_{i'a'}[\mathbf{Z}^{S}] \\
+        & -(Q_{i't'}-Q_{t'i'}) 
+        = \sum_{a}Z_{at'}F_{ai'}^{\alpha'}
+        + \sum_{i}Z_{t' i}F_{i' i}^{\beta'}
+        + 2G_{t'i'}^{\alpha'}[\mathbf{Z}^{S}]
+        - \sum_{a\sigma'}Z_{ai'}F_{at'}^{\sigma'}
+        - \sum_{t}Z_{ti'}F_{tt'}^{\beta'}
+        - 2G_{i't'}[\mathbf{Z}^{S}]\\
+        & -(Q_{t'a'}-Q_{a't'})
+        = \sum_{i\sigma'}Z_{a'i}F_{t'i}^{\sigma'}
+        + \sum_{t}Z_{a't}F_{t't}^{\alpha'}
+        - \sum_{a}Z_{at'}F_{aa'}^{\alpha'}
+        - \sum_{i}Z_{t' i}F_{a' i}^{\beta'}
+        - 2G_{t'a'}^{\alpha'}[\mathbf{Z}^{S}]
+    \end{aligned}
+\end{equation}
+求解 Z vector equation 可以得到 $Z_{ai}$, $Z_{at}$, $Z_{ti}$ ，进而可以得到 $W_{pq}$
+\begin{equation}
+    \begin{aligned}
+        & W_{i'j'} = \frac{1}{2}Q_{i'j'} + G_{i'j'}[\mathbf{Z}^{S}]\\
+        & W_{a'b'} = \frac{1}{2}Q_{a'b'}\\
+        & W_{t'u'} = \frac{1}{2}Q_{t'u'} + G_{t'u'}^{\alpha'}[\mathbf{Z}^{S}]\\
+        & W_{i'a'} = \frac{1}{2}Q_{i'a'} + \frac{1}{2}\sum_{a}Z_{ai'}F_{a'a}^{\sigma'} + \frac{1}{2}\sum_{t}Z_{ti'}F_{ta'}^{\beta'} + G_{i'a'}[\mathbf{Z}^{S}]\\
+        & W_{i't'} = \frac{1}{2}Q_{i't'} + \frac{1}{2}\sum_{a\sigma'}Z_{ai'}F_{at'}^{\sigma'} + \frac{1}{2}\sum_{t}Z_{ti'}F_{tt'}^{\beta'} + G_{i't'}[\mathbf{Z}^{S}]\\
+        & W_{a'i'} = \frac{1}{2}Q_{a'i'} + \frac{1}{2}\sum_{i}Z_{a'i}F_{i'i}^{\sigma'} + \frac{1}{2}\sum_{t}Z_{a't}F_{i't}^{\alpha'}\\
+        & W_{a't'} = \frac{1}{2}Q_{a't'} + \frac{1}{2}\sum_{i\sigma'}Z_{a'i}F_{t'i}^{\sigma'} + \frac{1}{2}\sum_{t}Z_{a't}F_{t't}^{\alpha'}\\
+        & W_{t'i'} = \frac{1}{2}Q_{t'i'} + \frac{1}{2}\sum_{a}Z_{at'}F_{ai'}^{\alpha'} + \frac{1}{2}\sum_{i}Z_{t' i}F_{i' i}^{\beta'} + G_{t'i'}^{\alpha'}[\mathbf{Z}^{S}]\\
+        & W_{t'a'} = \frac{1}{2}Q_{t'a'} + \frac{1}{2}\sum_{a}Z_{at'}F_{aa'}^{\alpha'} + \frac{1}{2}\sum_{i}Z_{t' i}F_{a' i}^{\beta'} + G_{t'a'}^{\alpha'}[\mathbf{Z}^{S}]
+    \end{aligned}
+\end{equation}
+有了 $W_{pq}$ 和 $Z_{pq}$ 带入 (\ref{eq:ROKS USF partial L}) ，然后加基态能量的梯度即可完成计算。
+
+
+
+\end{document}
