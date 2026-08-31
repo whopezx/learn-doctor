@@ -61,3 +61,10 @@ $R(X)$ 是泰勒级数和原函数的差别。
 
 1. We have not fully grasped the magnitude of this challenge. 
 我们还没有意识到这次挑战的严峻性。
+
+## conduct
+**Meaning:** 执行
+
+**Example:**
+
+1. 
