@@ -3,3 +3,4 @@
 | :---: | :---: | :---:|
 | ISroll | change mouse scroll direction | download from APP Store |
 | FIClash | magic platform | remember use rule mode and add some excluded domains, download Online |
+| PixPin | print screen | download Online |
